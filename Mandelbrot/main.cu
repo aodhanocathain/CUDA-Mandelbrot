@@ -4,9 +4,9 @@
 
 #include <iostream>
 
-#define WIDTH 80
-#define HEIGHT 45
-#define SPAN 4 //length of real axis visible on screen
+#define WIDTH 107
+#define HEIGHT 60
+#define SPAN 3 //length of real axis visible on screen
 #define MAX_ITERATIONS 100000
 #define IN_SET '0'
 #define NOT_IN_SET ' '

@@ -64,5 +64,14 @@ int main()
 		return(-1);
 	}
 
+	for (int row = 0; row < HEIGHT; row++)
+	{
+		for (int column = 0; column < WIDTH; column++)
+		{
+			cout << host_points[row * HEIGHT + column];
+		}
+		cout << endl;
+	}
+
 	return 0;
 }

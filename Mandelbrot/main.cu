@@ -68,7 +68,7 @@ int main()
 	{
 		for (int column = 0; column < WIDTH; column++)
 		{
-			cout << host_points[row * HEIGHT + column];
+			cout << host_points[row * WIDTH + column];
 		}
 		cout << endl;
 	}

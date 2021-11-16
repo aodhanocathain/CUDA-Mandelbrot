@@ -10,6 +10,7 @@
 #define MAX_ITERATIONS 100000
 #define IN_SET '0'
 #define NOT_IN_SET ' '
+#define ESCAPED_VALUE 3
 
 void __global__ iterate(char* points)
 {
@@ -18,11 +19,12 @@ void __global__ iterate(char* points)
 	int y = index / WIDTH;
 
 	//value = (axis scale) * (leftmost value + portion of axis covered)
-	float real = (SPAN) * (-(1/2) + (x/(float)WIDTH));
+	float real = (SPAN) * (-(1/(float)2) + (x/(float)WIDTH));
 	//value = (axis scale) * (top value + portion of axis covered)
-	float imaginary = (WIDTH / (float)HEIGHT) * ((1 / 2) - (y / (float)HEIGHT));
+	float imaginary = (SPAN * WIDTH / (float)HEIGHT) * ((1 / (float)2) - (y / (float)HEIGHT));
 
-	float realCopy; bool escape;
+	float realCopy; bool escape; 
+	float addend_real = real, addend_imaginary = imaginary;
 	for (int iterations = 0; iterations < MAX_ITERATIONS; iterations++)
 	{
 		realCopy = real;
@@ -35,8 +37,8 @@ void __global__ iterate(char* points)
 
 		//must use branchless code to avoid divergence
 		escape = real <= -2 || real >= 2 || imaginary <= -2 || imaginary >= 2;
-		real = 2 * (escape)+((real * real) - (imaginary * imaginary)) * (!escape);
-		imaginary = 2 * (escape)+(2 * realCopy * imaginary) * (!escape);
+		real = (ESCAPED_VALUE*(escape)) + ( (((real * real) - (imaginary * imaginary)) + addend_real) * (!escape));
+		imaginary = (ESCAPED_VALUE*(escape)) + ( ((2 * realCopy * imaginary) + addend_imaginary) * (!escape));
 	}
 
 	escape = real <= -2 || real >= 2 || imaginary <= -2 || imaginary >= 2;
@@ -68,7 +70,7 @@ int main()
 	{
 		for (int column = 0; column < WIDTH; column++)
 		{
-			cout << host_points[row * HEIGHT + column];
+			cout << host_points[(row * WIDTH) + column];
 		}
 		cout << endl;
 	}

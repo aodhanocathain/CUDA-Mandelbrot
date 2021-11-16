@@ -30,8 +30,8 @@ void __global__ iterate(char* points)
 		realCopy = real;
 
 		/* intended algorithm
-		real = (real * real) - (imaginary * imaginary);
-		imaginary = 2 * realCopy * imaginary;
+		real = (real * real) - (imaginary * imaginary) + original real;
+		imaginary = 2 * realCopy * imaginary + original imaginary;
 		if(absolute value of real or imaginary exceeds 2){return;}
 		*/
 

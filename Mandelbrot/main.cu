@@ -1,13 +1,16 @@
 #include "device_launch_parameters.h"
 #include "cuda_runtime.h"
 #include "cuda.h"
+#include "cuda_runtime.h"
+#include <chrono>
 
 #include <iostream>
+#include <ctime>
 
 #define WIDTH 107
 #define HEIGHT 60
 #define SPAN 3 //length of real axis visible on screen
-#define MAX_ITERATIONS 100000
+#define MAX_ITERATIONS 1000000
 #define IN_SET '0'
 #define NOT_IN_SET ' '
 #define ESCAPED_VALUE 3
@@ -45,28 +48,35 @@ void __global__ iterate(char* points)
 	points[index] = (IN_SET * !escape) + (NOT_IN_SET * escape);
 }
 
-int main()
+long long time_device()
 {
-	using namespace std;
 
-	char* host_points = (char*)malloc(sizeof(char)*HEIGHT*WIDTH);
+	using namespace std;
+	char* host_points = (char*)malloc(sizeof(char) * HEIGHT * WIDTH);
 	char* dev_points = nullptr;
 
-	if (cudaMalloc(&dev_points, sizeof(char)*HEIGHT*WIDTH))
+	auto start = chrono::steady_clock::now();
+
+	if (cudaMalloc(&dev_points, sizeof(char) * HEIGHT * WIDTH))
 	{
 		cout << "Could not allocate memory on the device";
 		return(-1);
 	}
 
-	iterate<<<HEIGHT, WIDTH>>>(dev_points);
+	iterate << <HEIGHT, WIDTH >> > (dev_points);
 
-	if (cudaMemcpy(host_points, dev_points, sizeof(char)*HEIGHT*WIDTH, cudaMemcpyDeviceToHost))
+	cudaDeviceSynchronize();
+
+	if (cudaMemcpy(host_points, dev_points, sizeof(char) * HEIGHT * WIDTH, cudaMemcpyDeviceToHost))
 	{
 		cout << "Could not copy memory from the device :(";
 		return(-1);
 	}
+	auto end = chrono::steady_clock::now();
+	return (long long)(chrono::duration_cast<chrono::milliseconds>(end - start).count());
 
-	for (int row = 0; row < HEIGHT; row++)
+	/*
+	* for (int row = 0; row < HEIGHT; row++)
 	{
 		for (int column = 0; column < WIDTH; column++)
 		{
@@ -74,6 +84,45 @@ int main()
 		}
 		cout << endl;
 	}
+	*/
+}
 
+long long time_host()
+{
+	using namespace std;
+	char* points = (char*)malloc(sizeof(char) * HEIGHT * WIDTH);
+
+	auto start = chrono::steady_clock::now();
+
+	for (int y = 0; y < HEIGHT; y++)
+	{
+		for (int x = 0; x < WIDTH; x++)
+		{
+			//value = (axis scale) * (leftmost value + portion of axis covered)
+			float real = (SPAN) * (-(1 / (float)2) + (x / (float)WIDTH));
+			//value = (axis scale) * (top value + portion of axis covered)
+			float imaginary = (SPAN * WIDTH / (float)HEIGHT) * ((1 / (float)2) - (y / (float)HEIGHT));
+
+			float realCopy;
+			float addend_real = real, addend_imaginary = imaginary;
+			for (int iterations = 0; iterations < MAX_ITERATIONS; iterations++)
+			{
+				realCopy = real;
+
+				real = (real * real) - (imaginary * imaginary) + addend_real;
+				imaginary = 2 * realCopy * imaginary + addend_imaginary;
+				if(real <= -2 || real >= 2 || imaginary <= -2 || imaginary >= 2){break;}
+			}
+
+			bool escape = real <= -2 || real >= 2 || imaginary <= -2 || imaginary >= 2;
+			points[y*WIDTH + x] = (IN_SET * !escape) + (NOT_IN_SET * escape);
+		}
+	}
+	auto end = chrono::steady_clock::now();
+	return (long long)(chrono::duration_cast<chrono::milliseconds>(end - start).count());
+}
+
+int main()
+{
 	return 0;
 }

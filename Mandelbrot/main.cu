@@ -1,6 +1,7 @@
 #include "device_launch_parameters.h"
 #include "cuda_runtime.h"
 #include "cuda.h"
+#include "cuda_runtime.h"
 
 #include <iostream>
 #include <ctime>
@@ -89,11 +90,37 @@ int time_device()
 
 int time_host()
 {
-	return 0;
+	long long startTime = time(0);
+	char* points = (char*)malloc(sizeof(char) * HEIGHT * WIDTH);
+	for (int y = 0; y < HEIGHT; y++)
+	{
+		for (int x = 0; x < WIDTH; x++)
+		{
+			//value = (axis scale) * (leftmost value + portion of axis covered)
+			float real = (SPAN) * (-(1 / (float)2) + (x / (float)WIDTH));
+			//value = (axis scale) * (top value + portion of axis covered)
+			float imaginary = (SPAN * WIDTH / (float)HEIGHT) * ((1 / (float)2) - (y / (float)HEIGHT));
+
+			float realCopy;
+			float addend_real = real, addend_imaginary = imaginary;
+			for (int iterations = 0; iterations < MAX_ITERATIONS; iterations++)
+			{
+				realCopy = real;
+
+				real = (real * real) - (imaginary * imaginary) + addend_real;
+				imaginary = 2 * realCopy * imaginary + addend_imaginary;
+				if(real <= -2 || real >= 2 || imaginary <= -2 || imaginary >= 2){break;}
+			}
+
+			bool escape = real <= -2 || real >= 2 || imaginary <= -2 || imaginary >= 2;
+			points[y*WIDTH + x] = (IN_SET * !escape) + (NOT_IN_SET * escape);
+		}
+	}
+	long long endTime = time(0);
+	return (int)(endTime - startTime);
 }
 
 int main()
 {
-
 	return 0;
 }

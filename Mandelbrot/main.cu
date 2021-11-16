@@ -15,6 +15,8 @@
 #define NOT_IN_SET ' '
 #define ESCAPED_VALUE 3
 
+char* globalPoints;
+
 void __global__ iterate(char* points)
 {
 	int index = (blockIdx.x * blockDim.x) + threadIdx.x;
@@ -73,18 +75,8 @@ long long time_device()
 		return(-1);
 	}
 	auto end = chrono::steady_clock::now();
+	globalPoints = host_points;
 	return (long long)(chrono::duration_cast<chrono::milliseconds>(end - start).count());
-
-	/*
-	* for (int row = 0; row < HEIGHT; row++)
-	{
-		for (int column = 0; column < WIDTH; column++)
-		{
-			cout << host_points[(row * WIDTH) + column];
-		}
-		cout << endl;
-	}
-	*/
 }
 
 long long time_host()
@@ -119,10 +111,27 @@ long long time_host()
 		}
 	}
 	auto end = chrono::steady_clock::now();
+	globalPoints = points;
 	return (long long)(chrono::duration_cast<chrono::milliseconds>(end - start).count());
 }
 
 int main()
 {
+	using namespace std;
+	cout << "Timing the host..." << endl;
+	float host_time = time_host()/(double)1000;
+	cout << "Timing the device..." << endl;
+	float device_time = time_device()/(double)1000;
+	for (int row = 0; row < HEIGHT; row++)
+	{
+		for (int column = 0; column < WIDTH; column++)
+		{
+			cout << globalPoints[(row * WIDTH) + column];
+		}
+		cout << endl;
+	}
+	printf("real axis span: %d, width: %d, height: %d, max iterations: %d\n", SPAN, WIDTH, HEIGHT, MAX_ITERATIONS);
+	cout << "Rendering in parallel on the graphics card takes " << device_time << " seconds." << endl;
+	cout << "Rendering on one CPU thread takes " << host_time << " seconds." << endl;
 	return 0;
 }

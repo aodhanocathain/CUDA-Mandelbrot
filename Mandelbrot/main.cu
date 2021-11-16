@@ -1,5 +1,6 @@
 ﻿#include "device_launch_parameters.h"
 #include "cuda_runtime.h"
+#include "cuda.h"
 
 #include <iostream>
 
@@ -44,5 +45,24 @@ void __global__ iterate(char* points)
 
 int main()
 {
+	using namespace std;
+
+	char* host_points = (char*)malloc(sizeof(char)*HEIGHT*WIDTH);
+	char* dev_points = nullptr;
+
+	if (cudaMalloc(&dev_points, sizeof(char)*HEIGHT*WIDTH))
+	{
+		cout << "Could not allocate memory on the device";
+		return(-1);
+	}
+
+	iterate<<<HEIGHT, WIDTH>>>(dev_points);
+
+	if (cudaMemcpy(host_points, dev_points, sizeof(char)*HEIGHT*WIDTH, cudaMemcpyDeviceToHost))
+	{
+		cout << "Could not copy memory from the device :(";
+		return(-1);
+	}
+
 	return 0;
 }

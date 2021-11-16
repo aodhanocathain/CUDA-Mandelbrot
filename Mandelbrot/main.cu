@@ -2,6 +2,7 @@
 #include "cuda_runtime.h"
 #include "cuda.h"
 #include "cuda_runtime.h"
+#include <chrono>
 
 #include <iostream>
 #include <ctime>
@@ -9,7 +10,7 @@
 #define WIDTH 107
 #define HEIGHT 60
 #define SPAN 3 //length of real axis visible on screen
-#define MAX_ITERATIONS 100000
+#define MAX_ITERATIONS 1000000
 #define IN_SET '0'
 #define NOT_IN_SET ' '
 #define ESCAPED_VALUE 3
@@ -47,15 +48,15 @@ void __global__ iterate(char* points)
 	points[index] = (IN_SET * !escape) + (NOT_IN_SET * escape);
 }
 
-int time_device()
+long long time_device()
 {
-	long long startTime = time(0);
 
+	using namespace std;
 	char* host_points = (char*)malloc(sizeof(char) * HEIGHT * WIDTH);
 	char* dev_points = nullptr;
 
+	auto start = chrono::steady_clock::now();
 
-	using namespace std;
 	if (cudaMalloc(&dev_points, sizeof(char) * HEIGHT * WIDTH))
 	{
 		cout << "Could not allocate memory on the device";
@@ -71,10 +72,8 @@ int time_device()
 		cout << "Could not copy memory from the device :(";
 		return(-1);
 	}
-
-	long long endTime = time(0);
-
-	return (int)(endTime - startTime);
+	auto end = chrono::steady_clock::now();
+	return (long long)(chrono::duration_cast<chrono::milliseconds>(end - start).count());
 
 	/*
 	* for (int row = 0; row < HEIGHT; row++)
@@ -88,10 +87,13 @@ int time_device()
 	*/
 }
 
-int time_host()
+long long time_host()
 {
-	long long startTime = time(0);
+	using namespace std;
 	char* points = (char*)malloc(sizeof(char) * HEIGHT * WIDTH);
+
+	auto start = chrono::steady_clock::now();
+
 	for (int y = 0; y < HEIGHT; y++)
 	{
 		for (int x = 0; x < WIDTH; x++)
@@ -116,8 +118,8 @@ int time_host()
 			points[y*WIDTH + x] = (IN_SET * !escape) + (NOT_IN_SET * escape);
 		}
 	}
-	long long endTime = time(0);
-	return (int)(endTime - startTime);
+	auto end = chrono::steady_clock::now();
+	return (long long)(chrono::duration_cast<chrono::milliseconds>(end - start).count());
 }
 
 int main()

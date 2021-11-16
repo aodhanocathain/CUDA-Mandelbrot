@@ -3,6 +3,7 @@
 #include "cuda.h"
 
 #include <iostream>
+#include <ctime>
 
 #define WIDTH 107
 #define HEIGHT 60
@@ -45,28 +46,37 @@ void __global__ iterate(char* points)
 	points[index] = (IN_SET * !escape) + (NOT_IN_SET * escape);
 }
 
-int main()
+int time_device()
 {
-	using namespace std;
+	long long startTime = time(0);
 
-	char* host_points = (char*)malloc(sizeof(char)*HEIGHT*WIDTH);
+	char* host_points = (char*)malloc(sizeof(char) * HEIGHT * WIDTH);
 	char* dev_points = nullptr;
 
-	if (cudaMalloc(&dev_points, sizeof(char)*HEIGHT*WIDTH))
+
+	using namespace std;
+	if (cudaMalloc(&dev_points, sizeof(char) * HEIGHT * WIDTH))
 	{
 		cout << "Could not allocate memory on the device";
 		return(-1);
 	}
 
-	iterate<<<HEIGHT, WIDTH>>>(dev_points);
+	iterate << <HEIGHT, WIDTH >> > (dev_points);
 
-	if (cudaMemcpy(host_points, dev_points, sizeof(char)*HEIGHT*WIDTH, cudaMemcpyDeviceToHost))
+	cudaDeviceSynchronize();
+
+	if (cudaMemcpy(host_points, dev_points, sizeof(char) * HEIGHT * WIDTH, cudaMemcpyDeviceToHost))
 	{
 		cout << "Could not copy memory from the device :(";
 		return(-1);
 	}
 
-	for (int row = 0; row < HEIGHT; row++)
+	long long endTime = time(0);
+
+	return (int)(endTime - startTime);
+
+	/*
+	* for (int row = 0; row < HEIGHT; row++)
 	{
 		for (int column = 0; column < WIDTH; column++)
 		{
@@ -74,6 +84,16 @@ int main()
 		}
 		cout << endl;
 	}
+	*/
+}
+
+int time_host()
+{
+	return 0;
+}
+
+int main()
+{
 
 	return 0;
 }

@@ -74,6 +74,12 @@ long long time_device()
 		cout << "Could not copy memory from the device :(";
 		return(-1);
 	}
+
+	if (cudaFree(dev_points))
+	{
+		cout << "Could not free memory on the device :(";
+		return(-1);
+	}
 	auto end = chrono::steady_clock::now();
 	globalPoints = host_points;
 	return (long long)(chrono::duration_cast<chrono::milliseconds>(end - start).count());
@@ -110,8 +116,10 @@ long long time_host()
 			points[y*WIDTH + x] = (IN_SET * !escape) + (NOT_IN_SET * escape);
 		}
 	}
+
+	free(points);
+
 	auto end = chrono::steady_clock::now();
-	globalPoints = points;
 	return (long long)(chrono::duration_cast<chrono::milliseconds>(end - start).count());
 }
 
